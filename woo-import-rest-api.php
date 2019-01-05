@@ -27,6 +27,7 @@ $upload_dir = wp_upload_dir();
 define('WOO_IMPORT', $upload_dir['basedir'] . '/woo_import/');
 define('WOO_IMPORT_PROCESS', WOO_IMPORT . 'process/');
 define('WOO_IMPORT_ARCHIVE', WOO_IMPORT . 'archive/');
+define('WOO_IMPORT_REST_DIR', dirname(__FILE__) . '/');
 
 if ( ! is_dir( WOO_IMPORT ) ) {
 	wp_mkdir_p( WOO_IMPORT );
