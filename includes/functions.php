@@ -485,7 +485,7 @@ add_filter('woocommerce_placeholder_img_src', 'woocommerce_placeholder_img_src_c
 function woocommerce_placeholder_img_src_custom ( $src ) {
     return '';
     global $product;
-    $image_src = get_post_meta($product->id, 'fifu_image_url');
+    $image_src = get_post_meta($product->id, '_fgfu_image_url');
 
     return reset($image_src);
 }
@@ -494,7 +494,7 @@ remove_action( 'woocommerce_product_thumbnails', 'woocommerce_show_product_thumb
 add_action( 'woocommerce_product_thumbnails', 'woocommerce_product_thumbnails_custom', 10 );
 function woocommerce_product_thumbnails_custom() {
     global $product;
-    $image_srcs = get_post_meta($product->id, 'fgfu_image_url');
+    $image_srcs = get_post_meta($product->id, '_fgfu_image_url');
     $image_srcs = reset($image_srcs);
     $count = 0;
     foreach ($image_srcs as $src) {

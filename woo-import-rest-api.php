@@ -20,14 +20,20 @@ if ( ! defined( 'WPINC' ) ) {
 	die;
 }
 
-include_once ABSPATH . "wp-admin/includes/class-wp-filesystem-base.php";
-include_once ABSPATH . "wp-admin/includes/class-wp-filesystem-direct.php";
+global $wpdb;
+global $wp_rewrite;
 
-$upload_dir = wp_upload_dir();
+$product_base_permalinks = explode('/', $wp_rewrite->extra_permastructs["product"]["struct"]);
+$product_base_permalinks = reset($product_base_permalinks);
+
+define('DB_PREFIX', $wpdb->prefix);
 define('WOO_IMPORT', $upload_dir['basedir'] . '/woo_import/');
 define('WOO_IMPORT_PROCESS', WOO_IMPORT . 'process/');
 define('WOO_IMPORT_ARCHIVE', WOO_IMPORT . 'archive/');
 define('WOO_IMPORT_REST_DIR', dirname(__FILE__) . '/');
+define('WOO_PRODUCT_BASE_PERMALINKS', site_url() . '/' . $product_base_permalinks);
+
+$upload_dir = wp_upload_dir();
 
 if ( ! is_dir( WOO_IMPORT ) ) {
 	wp_mkdir_p( WOO_IMPORT );
@@ -39,7 +45,24 @@ if ( ! is_dir( WOO_IMPORT_ARCHIVE ) ) {
 	wp_mkdir_p( WOO_IMPORT_ARCHIVE );
 }
 
-include "includes/functions.php";
+
+include_once WOO_IMPORT_REST_DIR . "includes/SimpleOrm.class.php";
+include_once ABSPATH . "wp-admin/includes/class-wp-filesystem-base.php";
+include_once ABSPATH . "wp-admin/includes/class-wp-filesystem-direct.php";
+include_once WOO_IMPORT_REST_DIR . "includes/functions.php";
+foreach(glob(WOO_IMPORT_REST_DIR . "includes/classes/*.php") as $file) {
+	include_once $file;
+}
+
+// Init orm
+// Connect to the database using mysqli
+$conn = new mysqli(DB_HOST, DB_USER, DB_PASSWORD);
+
+if ($conn->connect_error)
+  die(sprintf('Unable to connect to the database. %s', $conn->connect_error));
+
+// Tell Simple ORM to use the connection you just created.
+SimpleOrm::useConnection($conn, DB_NAME);
 
 add_action( 'rest_api_init', function () {
 
