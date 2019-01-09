@@ -174,6 +174,9 @@ class WooUtils
 	
 	function create_product($product_object) 
 	{
+	    if (!property_exists($product_object, 'variants')) {
+	        return false;
+        }
         $first_featured_image = null;
         // Get first featured image
         foreach ($product_object->variants as $variant){
@@ -561,7 +564,6 @@ class WooUtils
                                     'keywords' => []
                                 ]
                             ];
-
                             $product_variant_image_wp_post_meta = new Postmeta();
                             $product_variant_image_wp_post_meta->post_id = $product_variant_image_wp_post->ID;
                             $product_variant_image_wp_post_meta->meta_key = '_wp_attachment_metadata';

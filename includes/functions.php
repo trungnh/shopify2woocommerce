@@ -2,24 +2,24 @@
 
 function batch_import($request)
 {
-	$sources = $request['sources'];
-	register_process($sources);
-	
-	return rest_ensure_response(['data' => ['message' => 'Added process to queue']]);
+    $sources = $request['sources'];
+    register_process($sources);
+
+    return rest_ensure_response(['data' => ['message' => 'Added process to queue']]);
 }
 
-function register_process ($sources) 
+function register_process ($sources)
 {
-	$wp_filesystem = new WP_Filesystem_Direct([]);
-	$sources = is_array($sources) ? $sources : [$sources];
-	$source_json = json_encode($sources);
-		
-	$process_name = date('YmdHis') . '.process';
-	$file_path = WOO_IMPORT_PROCESS . process_name;
-	
-	$wp_filesystem->put_contents($file_path, $source_json);
-	
-	return;
+    $wp_filesystem = new WP_Filesystem_Direct([]);
+    $sources = is_array($sources) ? $sources : [$sources];
+    $source_json = json_encode($sources);
+
+    $process_name = date('YmdHis') . '.process';
+    $file_path = WOO_IMPORT_PROCESS . process_name;
+
+    $wp_filesystem->put_contents($file_path, $source_json);
+
+    return;
 }
 
 
@@ -72,7 +72,7 @@ function import_product($json)
 
         $product_data = get_products_from_json ($json);
         $product_id = create_variable_product($product_data);
-		$parent_regular_price = $product_data['regular_price'];
+        $parent_regular_price = $product_data['regular_price'];
         unset($product_data);
         if (!$product_id ) {
             return false;
@@ -105,10 +105,10 @@ function merge_product_and_variations($product_id, $regular_price, $variations)
     try{
         foreach($variations as $variation){
             $objVariation = new WC_Product_Variation();
-			if ($variation["price"] < $regular_price) {
-				$objVariation->set_price($variation["price"]);
-				$objVariation->set_sale_price($variation["price"]);	
-			}
+            if ($variation["price"] < $regular_price) {
+                $objVariation->set_price($variation["price"]);
+                $objVariation->set_sale_price($variation["price"]);
+            }
             $objVariation->set_regular_price($regular_price);
             $objVariation->set_parent_id($product_id);
             if(isset($variation["sku"]) && $variation["sku"]){
