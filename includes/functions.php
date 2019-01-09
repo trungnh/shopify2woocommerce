@@ -481,52 +481,62 @@ function to_array($input)
 
 /* ====== HOOKS ====== */
 
-add_filter('woocommerce_placeholder_img_src', 'woocommerce_placeholder_img_src_custom');
-function woocommerce_placeholder_img_src_custom ( $src ) {
-    return '';
-    global $product;
-    $image_src = get_post_meta($product->id, '_fgfu_image_url');
+//add_filter('woocommerce_placeholder_img_src', 'woocommerce_placeholder_img_src_custom');
+//function woocommerce_placeholder_img_src_custom ( $src ) {
+//    return '';
+//    global $product;
+//    $image_src = get_post_meta($product->id, '_fgfu_image_url');
+//
+//    return reset($image_src);
+//}
+//
+//remove_action( 'woocommerce_product_thumbnails', 'woocommerce_show_product_thumbnails', 20 );
+//add_action( 'woocommerce_product_thumbnails', 'woocommerce_product_thumbnails_custom', 10 );
+//function woocommerce_product_thumbnails_custom() {
+//    global $product;
+//    $image_srcs = get_post_meta($product->id, '_fgfu_image_url');
+//    $image_srcs = reset($image_srcs);
+//    $count = 0;
+//    foreach ($image_srcs as $src) {
+//        $class = ($count == 0) ? 'wp-post-image' : '';
+//        echo
+//            '<div data-thumb="' . esc_url( $src ) . '" class="woocommerce-product-gallery__image">
+//                <a href="' . esc_url( $src ) . '">' . '<img src="'.$src.'" class="'.$class.'">' . '</a>
+//            </div>';
+//        $count ++;
+//    }
+//}
+//
+//add_filter( 'wc_get_template_part', function( $template, $slug, $name )
+//{
+//
+//    // Look in plugin/woocommerce/slug-name.php or plugin/woocommerce/slug.php
+//    if ( $name ) {
+//        $path = plugin_dir_path( __FILE__ ) . WC()->template_path() . "{$slug}-{$name}.php";
+//    } else {
+//        $path = plugin_dir_path( __FILE__ ) . WC()->template_path() . "{$slug}.php";
+//    }
+//
+//    return file_exists( $path ) ? $path : $template;
+//
+//}, 10, 3 );
+//
+//
+//// get path for all other templates.
+//add_filter( 'woocommerce_locate_template', function( $template, $template_name, $template_path )
+//{
+//
+//    $path = WOO_IMPORT_REST_DIR . $template_path . $template_name;
+//    return file_exists( $path ) ? $path : $template;
+//
+//}, 10, 3 );
 
-    return reset($image_src);
-}
-
-remove_action( 'woocommerce_product_thumbnails', 'woocommerce_show_product_thumbnails', 20 );
-add_action( 'woocommerce_product_thumbnails', 'woocommerce_product_thumbnails_custom', 10 );
-function woocommerce_product_thumbnails_custom() {
-    global $product;
-    $image_srcs = get_post_meta($product->id, '_fgfu_image_url');
-    $image_srcs = reset($image_srcs);
-    $count = 0;
-    foreach ($image_srcs as $src) {
-        $class = ($count == 0) ? 'wp-post-image' : '';
-        echo
-            '<div data-thumb="' . esc_url( $src ) . '" class="woocommerce-product-gallery__image">
-                <a href="' . esc_url( $src ) . '">' . '<img src="'.$src.'" class="'.$class.'">' . '</a>
-            </div>';
-        $count ++;
-    }
-}
-
-add_filter( 'wc_get_template_part', function( $template, $slug, $name )
+add_filter('wp_get_attachment_image_src', 'staticize_attachment_src', null, 4);
+function staticize_attachment_src($image, $attachment_id, $size, $icon)
 {
-
-    // Look in plugin/woocommerce/slug-name.php or plugin/woocommerce/slug.php
-    if ( $name ) {
-        $path = plugin_dir_path( __FILE__ ) . WC()->template_path() . "{$slug}-{$name}.php";
-    } else {
-        $path = plugin_dir_path( __FILE__ ) . WC()->template_path() . "{$slug}.php";
+    $wp_upload_dir = wp_upload_dir();
+    if (is_array($image) && !empty($image[0])) {
+        $image[0] = str_replace( $wp_upload_dir['baseurl'] . '/' , '', $image[0] );
     }
-
-    return file_exists( $path ) ? $path : $template;
-
-}, 10, 3 );
-
-
-// get path for all other templates.
-add_filter( 'woocommerce_locate_template', function( $template, $template_name, $template_path )
-{
-
-    $path = WOO_IMPORT_REST_DIR . $template_path . $template_name;
-    return file_exists( $path ) ? $path : $template;
-
-}, 10, 3 );
+    return $image;
+}

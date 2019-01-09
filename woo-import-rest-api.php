@@ -19,13 +19,14 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 if ( ! defined( 'WPINC' ) ) {
 	die;
 }
-
+ini_set('display_errors',1);
 global $wpdb;
 global $wp_rewrite;
 
 $product_base_permalinks = explode('/', $wp_rewrite->extra_permastructs["product"]["struct"]);
 $product_base_permalinks = reset($product_base_permalinks);
 
+//define('UPLOADS', '');
 define('DB_PREFIX', $wpdb->prefix);
 define('WOO_IMPORT', $upload_dir['basedir'] . '/woo_import/');
 define('WOO_IMPORT_PROCESS', WOO_IMPORT . 'process/');
