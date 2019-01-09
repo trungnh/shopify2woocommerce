@@ -561,6 +561,7 @@ class WooUtils
                                     'keywords' => []
                                 ]
                             ];
+
                             $product_variant_image_wp_post_meta = new Postmeta();
                             $product_variant_image_wp_post_meta->post_id = $product_variant_image_wp_post->ID;
                             $product_variant_image_wp_post_meta->meta_key = '_wp_attachment_metadata';

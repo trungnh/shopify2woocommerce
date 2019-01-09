@@ -531,12 +531,19 @@ function to_array($input)
 //
 //}, 10, 3 );
 
-add_filter('wp_get_attachment_image_src', 'staticize_attachment_src', null, 4);
-function staticize_attachment_src($image, $attachment_id, $size, $icon)
+add_filter('wp_get_attachment_url', 'staticize_attachment_src', null, 4);
+function staticize_attachment_src($url, $post_id)
 {
     $wp_upload_dir = wp_upload_dir();
-    if (is_array($image) && !empty($image[0])) {
-        $image[0] = str_replace( $wp_upload_dir['baseurl'] . '/' , '', $image[0] );
+    return str_replace( $wp_upload_dir['baseurl'] . '/' , '', $url );
+}
+
+add_filter( 'wp_calculate_image_srcset', 'ssl_srcset', null, 5 );
+function ssl_srcset($sources, $size_array, $image_src, $image_meta, $attachment_id)
+{
+    foreach ( $sources as &$source ) {
+        $source['url'] = $image_src;
     }
-    return $image;
+
+    return $sources;
 }
