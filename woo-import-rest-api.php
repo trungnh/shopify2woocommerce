@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
 // If this file is called directly, abort.
 if ( ! defined( 'WPINC' ) ) {
-	die;
+    die;
 }
 ini_set('display_errors',1);
 global $wpdb;
@@ -33,17 +33,18 @@ define('WOO_IMPORT_PROCESS', WOO_IMPORT . 'process/');
 define('WOO_IMPORT_ARCHIVE', WOO_IMPORT . 'archive/');
 define('WOO_IMPORT_REST_DIR', dirname(__FILE__) . '/');
 define('WOO_PRODUCT_BASE_PERMALINKS', site_url() . '/' . $product_base_permalinks);
+define('VARIATION_THRESHOLD', 200);
 
 $upload_dir = wp_upload_dir();
 
 if ( ! is_dir( WOO_IMPORT ) ) {
-	wp_mkdir_p( WOO_IMPORT );
+    wp_mkdir_p( WOO_IMPORT );
 }
 if ( ! is_dir( WOO_IMPORT_PROCESS ) ) {
-	wp_mkdir_p( WOO_IMPORT_PROCESS );
+    wp_mkdir_p( WOO_IMPORT_PROCESS );
 }
 if ( ! is_dir( WOO_IMPORT_ARCHIVE ) ) {
-	wp_mkdir_p( WOO_IMPORT_ARCHIVE );
+    wp_mkdir_p( WOO_IMPORT_ARCHIVE );
 }
 
 
@@ -52,7 +53,7 @@ include_once ABSPATH . "wp-admin/includes/class-wp-filesystem-base.php";
 include_once ABSPATH . "wp-admin/includes/class-wp-filesystem-direct.php";
 include_once WOO_IMPORT_REST_DIR . "includes/functions.php";
 foreach(glob(WOO_IMPORT_REST_DIR . "includes/classes/*.php") as $file) {
-	include_once $file;
+    include_once $file;
 }
 
 // Init orm
@@ -60,7 +61,7 @@ foreach(glob(WOO_IMPORT_REST_DIR . "includes/classes/*.php") as $file) {
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASSWORD);
 
 if ($conn->connect_error)
-  die(sprintf('Unable to connect to the database. %s', $conn->connect_error));
+    die(sprintf('Unable to connect to the database. %s', $conn->connect_error));
 
 // Tell Simple ORM to use the connection you just created.
 SimpleOrm::useConnection($conn, DB_NAME);

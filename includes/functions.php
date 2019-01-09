@@ -550,3 +550,8 @@ function ssl_srcset($sources, $size_array, $image_src, $image_meta, $attachment_
 
     return $sources;
 }
+
+add_filter( 'woocommerce_ajax_variation_threshold', 'iconic_wc_ajax_variation_threshold', 10, 2 );
+function iconic_wc_ajax_variation_threshold( $qty, $product ) {
+    return VARIATION_THRESHOLD;
+}
