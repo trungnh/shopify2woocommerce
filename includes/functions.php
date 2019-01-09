@@ -43,7 +43,9 @@ function import_from_source_urls($request)
     foreach ($sources as $source) {
         $json = parse_json($source);
 
-        if (import_product($json)) {
+        $utils = new WooUtils();
+
+        if ($utils->create_product($json)) {
             $count++;
         }
     }
@@ -62,6 +64,7 @@ function import_from_source_urls($request)
  */
 function import_product($json)
 {
+
     try {
         $attributes = get_attributes_from_json($json);
         save_product_attribute($attributes);
