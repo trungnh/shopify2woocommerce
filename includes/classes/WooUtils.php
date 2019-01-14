@@ -175,9 +175,10 @@ class WooUtils
 
     function create_product($product_object)
     {
-        if (!property_exists($product_object, 'variants')) {
+        if (!is_object($product_object) || !property_exists($product_object, 'variants')) {
             return false;
         }
+		
         $first_featured_image = null;
         // Get first featured image
         foreach ($product_object->variants as $variant) {
@@ -201,7 +202,7 @@ class WooUtils
         $product_array = array();
 
         $product_array['type'] = 'variable';
-        $product_array['name'] = $product_object->title;
+        $product_array['name'] = $product_object->title . '-' . $product_object->id;
         $product_array['description'] = $product_object->description;
 
         $product_array['catalog_visibility'] = "visible";
@@ -221,7 +222,7 @@ class WooUtils
 
         // Map product attributes, collect only attributes which being used by current product
         $i = 0;
-        $product_array['default_attributes'] = [];
+        //$product_array['default_attributes'] = [];
         $product_array['product_attributes'] = [];
         $product_array['product_term_taxonomy_ids'] = [];
 
@@ -263,7 +264,7 @@ class WooUtils
                         }
                     }
 
-                    $product_array['default_attributes'][$slug] = $this->sanitize($attribute_options[0]);
+                    //$product_array['default_attributes'][$slug] = $this->sanitize($attribute_options[0]);
 
                     break;
                 }
@@ -327,7 +328,7 @@ class WooUtils
 
             //$this->create_postmeta($product_wp_post->ID, "_purchase_note", "");
 
-            $this->create_postmeta($product_wp_post->ID, "_default_attributes", serialize($product_array['default_attributes']));
+            //$this->create_postmeta($product_wp_post->ID, "_default_attributes", serialize($product_array['default_attributes']));
             $this->create_postmeta($product_wp_post->ID, "_virtual", "no");
             $this->create_postmeta($product_wp_post->ID, "_downloadable", "no");
 
@@ -454,7 +455,7 @@ class WooUtils
                 $product_variation = array();
 
                 $random_sku = "woo-" . $product_wp_post->ID . "-" . $menu_order;
-                $product_variation['sku'] = !empty($variant->sku) ? $variant->sku : $random_sku;
+                $product_variation['sku'] = !empty($variant->sku) ? $variant->sku . $random_sku : $random_sku;
 
                 $sale_price = $variant->price / 100;
                 // Min price is 17.55 for mug
@@ -731,16 +732,17 @@ class WooUtils
      */
     function parse_json($source)
     {
-        $userAgent = 'User-Agent: Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36';
+		sleep(5);
+		$userAgent = 'User-Agent: Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36';
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_USERAGENT, $userAgent);
-        curl_setopt($ch, CURLOPT_URL, $source);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        $data = curl_exec($ch);
-        curl_close($ch);
-
-        return json_decode($data);
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_USERAGENT, $userAgent);
+		curl_setopt($ch, CURLOPT_URL, $source);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		$data = curl_exec($ch);
+		curl_close($ch);
+		
+		return json_decode($data);
 
     }
 
@@ -765,4 +767,128 @@ class WooUtils
         return substr_compare($str, $end, -strlen($end)) === 0;
     }
 
+	function _unzip_file($file, $to) 
+	{
+		require_once(ABSPATH .'/wp-admin/includes/file.php');
+		WP_Filesystem();
+		global $wp_filesystem;
+
+		if ( ! $wp_filesystem || !is_object($wp_filesystem) )
+			return new WP_Error('fs_unavailable', __('Could not access filesystem.'));
+
+		// Unzip can use a lot of memory, but not this much hopefully.
+		wp_raise_memory_limit( 'admin' );
+
+		$needed_dirs = array();
+		$to = trailingslashit($to);
+
+		// Determine any parent dir's needed (of the upgrade directory)
+		if ( ! $wp_filesystem->is_dir($to) ) { //Only do parents if no children exist
+			$path = preg_split('![/\\\]!', untrailingslashit($to));
+			for ( $i = count($path); $i >= 0; $i-- ) {
+				if ( empty($path[$i]) )
+					continue;
+
+				$dir = implode('/', array_slice($path, 0, $i+1) );
+				if ( preg_match('!^[a-z]:$!i', $dir) ) // Skip it if it looks like a Windows Drive letter.
+					continue;
+
+				if ( ! $wp_filesystem->is_dir($dir) )
+					$needed_dirs[] = $dir;
+				else
+					break; // A folder exists, therefor, we dont need the check the levels below this
+			}
+		}
+		
+		// Fall through to PclZip if ZipArchive is not available, or encountered an error opening the file.
+		return $this->__unzip_file_pclzip($file, $to, $needed_dirs);
+	}
+
+	function __unzip_file_pclzip($file, $to, $needed_dirs = array()) 
+	{
+		global $wp_filesystem;
+
+		mbstring_binary_safe_encoding();
+
+		require_once(ABSPATH . 'wp-admin/includes/class-pclzip.php');
+
+		$archive = new PclZip($file);
+
+		$archive_files = $archive->extract(PCLZIP_OPT_EXTRACT_AS_STRING);
+
+		reset_mbstring_encoding();
+
+		// Is the archive valid?
+		if ( !is_array($archive_files) )
+			return new WP_Error('incompatible_archive', __('Incompatible Archive.'), $archive->errorInfo(true));
+
+		if ( 0 == count($archive_files) )
+			return new WP_Error( 'empty_archive_pclzip', __( 'Empty archive.' ) );
+
+		$uncompressed_size = 0;
+
+		// Determine any children directories needed (From within the archive)
+		foreach ( $archive_files as $file ) {
+			if ( '__MACOSX/' === substr($file['filename'], 0, 9) ) // Skip the OS X-created __MACOSX directory
+				continue;
+
+			$uncompressed_size += $file['size'];
+
+			$needed_dirs[] = $to . untrailingslashit( $file['folder'] ? $file['filename'] : dirname($file['filename']) );
+		}
+
+		/*
+		 * disk_free_space() could return false. Assume that any falsey value is an error.
+		 * A disk that has zero free bytes has bigger problems.
+		 * Require we have enough space to unzip the file and copy its contents, with a 10% buffer.
+		 */
+		if ( wp_doing_cron() ) {
+			$available_space = @disk_free_space( WP_CONTENT_DIR );
+			if ( $available_space && ( $uncompressed_size * 2.1 ) > $available_space )
+				return new WP_Error( 'disk_full_unzip_file', __( 'Could not copy files. You may have run out of disk space.' ), compact( 'uncompressed_size', 'available_space' ) );
+		}
+
+		$needed_dirs = array_unique($needed_dirs);
+		foreach ( $needed_dirs as $dir ) {
+			// Check the parent folders of the folders all exist within the creation array.
+			if ( untrailingslashit($to) == $dir ) // Skip over the working directory, We know this exists (or will exist)
+				continue;
+			if ( strpos($dir, $to) === false ) // If the directory is not within the working directory, Skip it
+				continue;
+
+			$parent_folder = dirname($dir);
+			while ( !empty($parent_folder) && untrailingslashit($to) != $parent_folder && !in_array($parent_folder, $needed_dirs) ) {
+				$needed_dirs[] = $parent_folder;
+				$parent_folder = dirname($parent_folder);
+			}
+		}
+		asort($needed_dirs);
+
+		// Create those directories if need be:
+		foreach ( $needed_dirs as $_dir ) {
+			// Only check to see if the dir exists upon creation failure. Less I/O this way.
+			if ( ! $wp_filesystem->mkdir( $_dir, FS_CHMOD_DIR ) && ! $wp_filesystem->is_dir( $_dir ) )
+				return new WP_Error( 'mkdir_failed_pclzip', __( 'Could not create directory.' ), substr( $_dir, strlen( $to ) ) );
+		}
+		unset($needed_dirs);
+
+		// Extract the files from the zip
+		foreach ( $archive_files as $file ) {
+			if ( $file['folder'] )
+				continue;
+
+			if ( '__MACOSX/' === substr($file['filename'], 0, 9) ) // Don't extract the OS X-created __MACOSX directory files
+				continue;
+
+			// Don't extract invalid files:
+			if ( 0 !== validate_file( $file['filename'] ) ) {
+				continue;
+			}
+
+			if ( ! $wp_filesystem->put_contents( $to . $file['filename'], $file['content'], FS_CHMOD_FILE) )
+				return new WP_Error( 'copy_failed_pclzip', __( 'Could not copy file.' ), $file['filename'] );
+		}
+		//return $to . $file['filename'];
+		return true;
+	}
 }
