@@ -567,7 +567,6 @@
 			$gallery_imgs.removeClass('flex-active');
 			for (var i=0; i<$gallery_imgs.length; i++) {
 				if ($gallery_imgs[i].src === variation.image.src) {
-					console.log($gallery_imgs[i]);
 					$($gallery_imgs[i]).addClass('flex-active');
 					break;
 				}
