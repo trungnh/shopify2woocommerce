@@ -1,7 +1,11 @@
 <?php
-ini_set('display_errors',1);
+
 function import_from_zip($request)
 {
+	if (!lock_process()) {
+		return new WP_Error( 'error', 'There is a running process. Please come back later', ['status' => 400]);
+	}
+	
 	wlog('Start - ' . date('Y/m/d H:i:s'));
 	$zips = glob(WOO_IMPORT_UPLOAD_ZIP_SOURCE . '*.zip');
 	if (empty($zips)) {
@@ -21,6 +25,7 @@ function import_from_zip($request)
 	$message['import_count'] = "{$count} / {$total}";
 	wlog(" ----- {$count} / {$total}");
 	wlog('End - ' . date('Y/m/d H:i:s'));
+	unlock_process();
 	return rest_ensure_response(['data' => $message]);
 }
 
@@ -124,4 +129,23 @@ function wlog($mes, $log_file = WOO_IMPORT . 'message.log')
     file_put_contents($log_file, $prefix . ' - ' . $mes . PHP_EOL, FILE_APPEND);
 }
 
+function lock_process()
+{
+	$lock_file = WOO_IMPORT . 'process.lock';
+	if (file_exists($lock_file)) {
+		return false;
+	}
+	
+	try {
+		touch();
+	} catch (Exception $e) {
+		return false;
+	}
+	
+	return true;
+}
 
+function unlock_process()
+{
+	unlink(WOO_IMPORT . 'process.lock');
+}
