@@ -83,7 +83,7 @@
 			$product.find( '.product_meta' ).find( '.sku' ).wc_reset_content();
 			$('.product_weight').wc_reset_content();
 			$('.product_dimensions').wc_reset_content();
-			$form.trigger( 'reset_image' );
+			//$form.trigger( 'reset_image' );
 			$single_variation.slideUp( 200 ).trigger( 'hide_variation' );
 		} )
 
@@ -286,10 +286,9 @@
 
 			// Find the variations that match with the attributes chosen so far
 			var matching_variations = wc_variation_form_matcher.find_matching_variations( $product_variations, current_settings );
+			var variation = matching_variations.length > 0 ? matching_variations[0] : false;
 
 			if ( all_attributes_chosen ) {
-
-				var variation = matching_variations.length > 0 ? matching_variations[0] : false;
 
 				if ( variation ) {
 					$form.trigger( 'found_variation', [ variation ] );
@@ -301,7 +300,10 @@
 				}
 
 			} else {
-
+				if (variation) {
+					// Show images
+					$form.wc_variations_image_update( variation );
+				}
 				$form.trigger( 'reset_data' );
 				$single_variation.slideUp( 200 ).trigger( 'hide_variation' );
 			}
@@ -546,6 +548,7 @@
 		var $form             = this,
 			$product          = $form.closest('.product'),
 			$gallery_img      = $product.find( '.flex-control-nav li:eq(0) img' ),
+			$gallery_imgs      = $product.find( '.flex-control-nav li img' ),
 			$product_img_wrap = $product.find( '.woocommerce-product-gallery__wrapper .woocommerce-product-gallery__image:eq(0)' ),
 			$product_img      = $product.find( '.woocommerce-product-gallery__wrapper .woocommerce-product-gallery__image:eq(0) .wp-post-image' );
 
@@ -561,6 +564,14 @@
 			$product_img.wc_set_variation_attr( 'data-large-image-width', variation.image.full_src_w );
 			$product_img.wc_set_variation_attr( 'data-large-image-height', variation.image.full_src_h );
 			$product_img_wrap.wc_set_variation_attr( 'data-thumb', variation.image.src );
+			$gallery_imgs.removeClass('flex-active');
+			for (var i=0; i<$gallery_imgs.length; i++) {
+				if ($gallery_imgs[i].src === variation.image.src) {
+					console.log($gallery_imgs[i]);
+					$($gallery_imgs[i]).addClass('flex-active');
+					break;
+				}
+			}
 		} else {
 			$product_img_wrap.wc_reset_variation_attr( 'data-thumb' );
 			$product_img.wc_reset_variation_attr( 'large-image' );
